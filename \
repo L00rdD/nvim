@@ -1,0 +1,87 @@
+return {
+  "neovim/nvim-lspconfig",
+  event = { "BufReadPre", "BufNewFile" },
+  dependencies = {
+    "hrsh7th/cmp-nvim-lsp",
+    { "antosha417/nvim-lsp-file-operations", config = true },
+    { "folke/neodev.nvim", opts = {} },
+  },
+  config = function()
+    -- Import des plugins
+    local lspconfig = require("lspconfig")
+    local cmp_nvim_lsp = require("cmp_nvim_lsp")
+    local keymap = vim.keymap -- Pour raccourcis
+
+    -- Configuration générale pour l'auto-importation
+    local capabilities = cmp_nvim_lsp.default_capabilities()
+
+    -- Fonction pour attacher les raccourcis LSP à chaque serveur
+    local on_attach = function(client, bufnr)
+      local opts = { buffer = bufnr, silent = true }
+
+      -- Raccourcis LSP
+      keymap.set("n", "gd", "<cmd>lua vim.lsp.buf.definition()<CR>", opts) -- Aller à la définition
+      keymap.set("n", "gD", "<cmd>lua vim.lsp.buf.declaration()<CR>", opts) -- Aller à la déclaration
+      keymap.set("n", "gi", "<cmd>lua vim.lsp.buf.implementation()<CR>", opts) -- Trouver les implémentations
+      keymap.set("n", "gr", "<cmd>lua vim.lsp.buf.references()<CR>", opts) -- Trouver les références
+      keymap.set("n", "K", "<cmd>lua vim.lsp.buf.hover()<CR>", opts) -- Documentation (hover)
+      keymap.set("n", "<leader>rn", "<cmd>lua vim.lsp.buf.rename()<CR>", opts) -- Renommer
+      keymap.set("n", "<leader>ai", "<cmd>lua vim.lsp.buf.code_action()<CR>", opts) -- Actions spécifiques au code
+      keymap.set("n", "<leader><CR>", vim.lsp.buf.code_action, { noremap = true, silent = true })
+      keymap.set("v", "<leader><CR>", vim.lsp.buf.code_action, { noremap = true, silent = true })
+      keymap.set("n", "<leader>cc", "<cmd>lua vim.lsp.buf.format({ async = true })<CR>", opts) -- Formater le fichier
+    end
+
+    -- Configuration de clangd pour C++/Qt
+    lspconfig.clangd.setup({
+      cmd = { "clangd" },
+      root_dir = lspconfig.util.root_pattern("compile_commands.json", ".git"),
+      filetypes = { "c", "cpp", "objc", "objcpp" },
+      single_file_support = true,
+      capabilities = capabilities,
+      on_attach = on_attach,
+    })
+
+    -- Configuration du serveur Dart pour Flutter
+    lspconfig.dartls.setup({
+      capabilities = capabilities,
+      on_attach = on_attach,
+      settings = {
+        dart = {
+          completeFunctionCalls = true,
+          enableFlutterOutline = true,
+          showTodos = true,
+          autoImport = {
+            enabled = true, -- Activer l'auto-importation
+          },
+          format = {
+            lineLength = 120,
+            sortMembers = true,
+            enabled = true,
+          },
+        },
+        flutter = {
+          completeFunctionCalls = true,
+        },
+      },
+    })
+
+    -- Configuration pour TypeScript (auto-importation)
+    lspconfig.tsserver.setup({
+      capabilities = capabilities,
+      on_attach = on_attach,
+      settings = {
+        javascript = {
+          format = { enable = true },
+          autoImportSuggestions = true, -- Active l'auto-importation pour JS
+        },
+        typescript = {
+          format = { enable = true },
+          autoImportSuggestions = true, -- Active l'auto-importation pour TS
+        },
+      },
+    })
+
+    -- Ajoutez d'autres configurations LSP si nécessaire...
+  end,
+}
