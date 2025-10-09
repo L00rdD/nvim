@@ -7,37 +7,54 @@ return {
     { "folke/neodev.nvim", opts = {} },
   },
   config = function()
-    -- Import des plugins
     local lspconfig = require("lspconfig")
     local cmp_nvim_lsp = require("cmp_nvim_lsp")
-    local keymap = vim.keymap -- Pour raccourcis
+    local keymap = vim.keymap
 
-    -- Configuration générale pour l'auto-importation
     local capabilities = cmp_nvim_lsp.default_capabilities()
 
-    -- Configuration de clangd pour C++/Qt
+    -- Fonction commune pour activer format on save
+    local function on_attach(client, bufnr)
+      -- Format on save
+      if client.server_capabilities.documentFormattingProvider then
+        local group = vim.api.nvim_create_augroup("LspFormatting", { clear = true })
+        vim.api.nvim_create_autocmd("BufWritePre", {
+          group = group,
+          buffer = bufnr,
+          callback = function()
+            vim.lsp.buf.format({ bufnr = bufnr })
+          end,
+        })
+      end
+
+      local opts = { buffer = bufnr, silent = true }
+      keymap.set("n", "<leader>ai", vim.lsp.buf.code_action, opts)
+      keymap.set("n", "<leader>5", function()
+        vim.lsp.buf.format({ async = true })
+      end, { desc = "Format file via LSP" })
+    end
+
+    -- clangd pour C/C++
     lspconfig.clangd.setup({
       cmd = { "clangd" },
       root_dir = lspconfig.util.root_pattern("compile_commands.json", ".git"),
       filetypes = { "c", "cpp", "objc", "objcpp" },
       single_file_support = true,
       capabilities = capabilities,
+      on_attach = on_attach, -- <- important
     })
 
-    -- Configuration du serveur Dart pour Flutter
+    -- dartls pour Flutter/Dart
     lspconfig.dartls.setup({
       capabilities = capabilities,
-      on_attach = function(client, bufnr)
-        local opts = { buffer = bufnr, silent = true }
-        keymap.set("n", "<leader>ai", "<cmd>lua vim.lsp.buf.code_action()<CR>", opts) -- Action pour auto-import
-      end,
+      on_attach = on_attach,
       settings = {
         dart = {
           completeFunctionCalls = true,
           enableFlutterOutline = true,
           showTodos = true,
           autoImport = {
-            enabled = true, -- Activer l'auto-importation
+            enabled = true,
           },
         },
         flutter = {
@@ -46,21 +63,27 @@ return {
       },
     })
 
-    -- Configuration pour TypeScript (auto-importation)
+    -- tsserver pour TypeScript/JS
     lspconfig.tsserver.setup({
       capabilities = capabilities,
+      on_attach = on_attach,
       settings = {
         javascript = {
           format = { enable = true },
-          autoImportSuggestions = true, -- Active l'auto-importation pour JS
+          autoImportSuggestions = true,
         },
         typescript = {
           format = { enable = true },
-          autoImportSuggestions = true, -- Active l'auto-importation pour TS
+          autoImportSuggestions = true,
         },
       },
     })
 
-    -- Autres configurations LSP...
+    -- kotlin-language-server
+    lspconfig.kotlin_language_server.setup({
+      capabilities = capabilities,
+      on_attach = on_attach,
+      root_dir = lspconfig.util.root_pattern("settings.gradle", "build.gradle", ".git"),
+    })
   end,
 }
