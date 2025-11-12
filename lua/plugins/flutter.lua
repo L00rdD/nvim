@@ -3,7 +3,7 @@ return {
   lazy = false,
   dependencies = {
     "nvim-lua/plenary.nvim",
-    "stevearc/dressing.nvim", -- optional for vim.ui.select
+    "stevearc/dressing.nvim",
   },
   config = function()
     local flutterConfig = require("flutter-tools")
@@ -20,11 +20,7 @@ return {
           project_config = true,
         },
       },
-      debugger = {
-        enabled = false,
-        run_via_dap = false,
-        exception_breakpoints = {},
-      },
+      debugger = { enabled = false, run_via_dap = false },
       root_patterns = { ".git", "pubspec.yaml" },
       fvm = true,
       widget_guides = { enabled = false },
@@ -76,7 +72,7 @@ return {
       end,
     })
 
-    -- [[ Configure Flutter tools ]]
+    -- Flutter telescope commands
     vim.keymap.set(
       "n",
       "<leader>1",
@@ -84,19 +80,18 @@ return {
       { desc = "Open Flutter commands" }
     )
 
-    -- Build runner (ancienne version conservée sous b1)
+    -- Ancienne commande build_runner
     vim.keymap.set("n", "<leader>b1", function()
       vim.cmd("20new")
       vim.cmd("te fvm flutter packages pub run build_runner build --delete-conflicting-outputs")
       vim.cmd("2sleep | normal G")
     end, { desc = "Run build_runner (legacy)" })
 
-    -- Code actions
     vim.keymap.set("n", "<leader><CR>", function()
       vim.lsp.buf.code_action()
     end, { desc = "Flutter LSP code actions" })
 
-    -- 🔧 Utilitaire : récupère la commande flutter (fvm ou non)
+    -- 🔧 Commande Flutter adaptée à fvm
     local function get_flutter_cmd()
       if vim.fn.executable("fvm") == 1 then
         return "fvm flutter test "
@@ -105,26 +100,12 @@ return {
       end
     end
 
-    -- 🔧 Fonction réutilisable : ouvre un terminal éphémère (25% split)
+    -- 🔧 Fonction pour ouvrir un terminal temporaire (25 % split)
     local function open_temp_terminal(cmd)
       local height = math.floor(vim.o.lines * 0.25)
       vim.cmd(height .. "split")
       vim.cmd("te " .. cmd)
-
-      -- Ferme automatiquement la fenêtre et le buffer à la fin du job
-      vim.api.nvim_create_autocmd("TermClose", {
-        buffer = 0,
-        once = true,
-        callback = function(event)
-          local win = vim.fn.bufwinid(event.buf)
-          if win ~= -1 then
-            vim.api.nvim_win_close(win, true)
-          end
-          if vim.api.nvim_buf_is_valid(event.buf) then
-            vim.api.nvim_buf_delete(event.buf, { force = true })
-          end
-        end,
-      })
+      vim.cmd("startinsert") -- passe en mode terminal directement
     end
 
     -- ▶️ Test du fichier courant
@@ -140,6 +121,11 @@ return {
     -- 🏗️ Build Runner
     vim.keymap.set("n", "<leader>2d", function()
       open_temp_terminal("dart run build_runner build --delete-conflicting-outputs")
+    end, { desc = "Run build_runner (25% split)" })
+
+    -- 🏗️ flutter pub get
+    vim.keymap.set("n", "<leader>2g", function()
+      open_temp_terminal("flutter pub get")
     end, { desc = "Run build_runner (25% split)" })
   end,
 }
