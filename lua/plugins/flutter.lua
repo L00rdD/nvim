@@ -16,12 +16,11 @@ return {
       decorations = {
         statusline = {
           app_version = true,
-          device = true,
+          device = false, -- ❗ important → ne pas forcer un device global
           project_config = true,
         },
       },
       debugger = { enabled = false, run_via_dap = false },
-      root_patterns = { ".git", "pubspec.yaml" },
       fvm = true,
       widget_guides = { enabled = false },
       closing_tags = {
@@ -44,7 +43,7 @@ return {
       },
       lsp = {
         color = {
-          enabled = false,
+          enabled = true,
           background = false,
           foreground = false,
           virtual_text = true,
@@ -54,7 +53,7 @@ return {
           config.specificThingIDontWant = false
           return config
         end,
-        analysisExcludedFolders = { "./fvm/" },
+        -- PAS de root_patterns ici
         settings = {
           showTodos = true,
           completeFunctionCalls = true,
@@ -64,6 +63,7 @@ return {
       },
     })
 
+    -- Reste de tes mappings identiques…
     vim.api.nvim_create_autocmd("BufEnter", {
       pattern = "__FLUTTER_DEV_LOG__",
       callback = function()
@@ -72,7 +72,6 @@ return {
       end,
     })
 
-    -- Flutter telescope commands
     vim.keymap.set(
       "n",
       "<leader>1",
@@ -80,7 +79,6 @@ return {
       { desc = "Open Flutter commands" }
     )
 
-    -- Ancienne commande build_runner
     vim.keymap.set("n", "<leader>b1", function()
       vim.cmd("20new")
       vim.cmd("te fvm flutter packages pub run build_runner build --delete-conflicting-outputs")
@@ -91,7 +89,6 @@ return {
       vim.lsp.buf.code_action()
     end, { desc = "Flutter LSP code actions" })
 
-    -- 🔧 Commande Flutter adaptée à fvm
     local function get_flutter_cmd()
       if vim.fn.executable("fvm") == 1 then
         return "fvm flutter test "
@@ -100,32 +97,27 @@ return {
       end
     end
 
-    -- 🔧 Fonction pour ouvrir un terminal temporaire (25 % split)
     local function open_temp_terminal(cmd)
       local height = math.floor(vim.o.lines * 0.25)
       vim.cmd(height .. "split")
       vim.cmd("te " .. cmd)
-      vim.cmd("startinsert") -- passe en mode terminal directement
+      vim.cmd("startinsert")
     end
 
-    -- ▶️ Test du fichier courant
     vim.keymap.set("n", "<leader>2t", function()
       open_temp_terminal(get_flutter_cmd() .. vim.fn.expand("%"))
-    end, { desc = "Test current file (25% split)" })
+    end, { desc = "Test current file" })
 
-    -- ▶️ Test de tous les fichiers
     vim.keymap.set("n", "<leader>2T", function()
       open_temp_terminal(get_flutter_cmd())
-    end, { desc = "Test all files (25% split)" })
+    end, { desc = "Test all files" })
 
-    -- 🏗️ Build Runner
     vim.keymap.set("n", "<leader>2d", function()
       open_temp_terminal("dart run build_runner build --delete-conflicting-outputs")
-    end, { desc = "Run build_runner (25% split)" })
+    end, { desc = "Run build_runner" })
 
-    -- 🏗️ flutter pub get
     vim.keymap.set("n", "<leader>2g", function()
       open_temp_terminal("flutter pub get")
-    end, { desc = "Run build_runner (25% split)" })
+    end, { desc = "pub get" })
   end,
 }
