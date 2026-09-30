@@ -9,31 +9,28 @@ return {
     local flutterConfig = require("flutter-tools")
     local flutter_format_group = vim.api.nvim_create_augroup("FlutterLspFormatting", {})
 
-    -- ⭐ AJOUT : capabilities LSP (cmp)
-local capabilities = vim.lsp.protocol.make_client_capabilities()
+    -- LSP capabilities (cmp)
+    local capabilities = vim.lsp.protocol.make_client_capabilities()
+    local ok, cmp = pcall(require, "cmp_nvim_lsp")
+    if ok then
+      capabilities = cmp.default_capabilities(capabilities)
+    end
 
-local ok, cmp = pcall(require, "cmp_nvim_lsp")
-if ok then
-  capabilities = cmp.default_capabilities(capabilities)
-end
-
-    -- ⭐ AJOUT : on_attach commun (Flutter uniquement)
+    -- Common on_attach (Flutter only)
     local function on_attach(client, bufnr)
       local opts = { buffer = bufnr, silent = true }
 
-      -- Navigation type VS Code
+      -- VS Code-like navigation
       vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
       vim.keymap.set("n", "gr", vim.lsp.buf.references, opts)
       vim.keymap.set("n", "gy", vim.lsp.buf.type_definition, opts)
       vim.keymap.set("n", "K",  vim.lsp.buf.hover, opts)
 
-      -- Code actions (cohérent avec ton mapping global)
+      -- Code actions
       vim.keymap.set("n", "<leader><CR>", vim.lsp.buf.code_action, opts)
 
       if client.name == "dartls" then
-        -- =========================
-        -- Format Dart MANUEL
-        -- =========================
+        -- Manual Dart format
         vim.keymap.set("n", "<leader>5", function()
           local file = vim.api.nvim_buf_get_name(0)
           if file == "" then
@@ -51,9 +48,7 @@ end
           vim.cmd("checktime")
         end, { buffer = bufnr, desc = "Format Dart (dart format)" })
 
-        -- =========================
-        -- Format Dart AU SAVE
-        -- =========================
+        -- Format Dart ON SAVE
         local group = vim.api.nvim_create_augroup(
           "FlutterDartFormatOnSave",
           { clear = false }
@@ -62,27 +57,6 @@ end
         vim.api.nvim_clear_autocmds({
           group = group,
           buffer = bufnr,
-        })
-
-        vim.api.nvim_create_autocmd("BufWritePre", {
-          group = group,
-          buffer = bufnr,
-          callback = function()
-            local file = vim.api.nvim_buf_get_name(bufnr)
-            if file == "" then
-              return
-            end
-
-            local cmd
-            if vim.fn.executable("fvm") == 1 then
-              cmd = { "fvm", "dart", "format", file }
-            else
-              cmd = { "dart", "format", file }
-            end
-
-            vim.fn.system(cmd)
-            vim.cmd("checktime")
-          end,
         })
       end
     end
@@ -110,7 +84,8 @@ end
       dev_log = {
         enabled = true,
         notify_errors = false,
-        open_cmd = "tabedit",
+        -- Ouverture des logs en split horizontal en bas (15 lignes de haut)
+        open_cmd = "botright 15split", 
       },
       dev_tools = {
         autostart = false,
@@ -121,10 +96,8 @@ end
         auto_open = false,
       },
       lsp = {
-        -- ⭐ AJOUT : brancher cmp + on_attach
         capabilities = capabilities,
         on_attach = on_attach,
-
         color = {
           enabled = true,
           background = false,
@@ -132,8 +105,6 @@ end
           virtual_text = true,
           virtual_text_str = "■",
         },
-
-        -- PAS de root_patterns ici
         settings = {
           showTodos = true,
           completeFunctionCalls = true,
@@ -143,8 +114,7 @@ end
       },
     })
 
-    -- ===== LE RESTE DE TA CONFIG EST INCHANGÉ =====
-
+    -- Autocmd pour s'assurer que le buffer de log s'affiche correctement
     vim.api.nvim_create_autocmd("BufEnter", {
       pattern = "__FLUTTER_DEV_LOG__",
       callback = function()
@@ -153,6 +123,7 @@ end
       end,
     })
 
+    -- Flutter and build_runner mappings
     vim.keymap.set(
       "n",
       "<leader>1",
@@ -168,9 +139,9 @@ end
 
     local function get_flutter_cmd()
       if vim.fn.executable("fvm") == 1 then
-        return "fvm flutter test "
+        return "fvm flutter test --reporter=failures-only "
       else
-        return "flutter test "
+        return "flutter test --reporter=failures-only "
       end
     end
 
@@ -181,6 +152,7 @@ end
       vim.cmd("startinsert")
     end
 
+    -- Testing and pub mappings
     vim.keymap.set("n", "<leader>2t", function()
       open_temp_terminal(get_flutter_cmd() .. vim.fn.expand("%"))
     end, { desc = "Test current file" })
@@ -196,5 +168,8 @@ end
     vim.keymap.set("n", "<leader>2g", function()
       open_temp_terminal("flutter pub get")
     end, { desc = "pub get" })
+
+    -- Échap pour quitter le mode insertion du terminal
+    vim.keymap.set("t", "<Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
   end,
 }

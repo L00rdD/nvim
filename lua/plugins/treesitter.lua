@@ -1,17 +1,34 @@
--- treesitter.lua
-require("lazy").setup({
+return {
   {
     "nvim-treesitter/nvim-treesitter",
     build = ":TSUpdate",
+    event = { "BufReadPost", "BufNewFile" }, -- Charge le plugin uniquement quand on ouvre un fichier
     config = function()
-      local configs = require("nvim-treesitter.configs")
+      -- On utilise pcall (protected call) pour éviter de faire crash Neovim 
+      -- si le module est vraiment introuvable
+      local status_ok, configs = pcall(require, "nvim-treesitter.configs")
+      if not status_ok then
+        return
+      end
 
       configs.setup({
-        ensure_installed = { "c", "lua", "vim", "vimdoc", "query", "elixir", "heex", "javascript", "html" },
+        -- Langages à installer automatiquement
+        ensure_installed = { 
+          "lua", 
+          "vim", 
+          "vimdoc", 
+          "query", 
+          "markdown", 
+          "markdown_inline",
+          "dart" -- Très important pour ton projet Flutter !
+        },
         sync_install = false,
-        highlight = { enable = true },
+        highlight = {
+          enable = true, -- Active la coloration syntaxique Treesitter
+          additional_vim_regex_highlighting = false,
+        },
         indent = { enable = true },
       })
     end,
   },
-})
+}

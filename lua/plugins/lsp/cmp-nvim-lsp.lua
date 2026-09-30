@@ -1,31 +1,39 @@
 return {
-  -- Plugins à installer
   {
-    "hrsh7th/cmp-nvim-lsp",
-    event = "InsertEnter", -- Le plugin se charge lorsque tu entres en mode Insertion
+    "hrsh7th/nvim-cmp",
+    event = "InsertEnter",
     dependencies = {
-      "hrsh7th/nvim-cmp", -- Complétion générale
-      "hrsh7th/cmp-buffer", -- Complétion depuis le buffer
-      "saadparwaiz1/cmp_luasnip", -- Complétion avec LuaSnip
+      "hrsh7th/cmp-nvim-lsp",     -- Source LSP
+      "hrsh7th/cmp-buffer",       -- Source Buffer
+      "saadparwaiz1/cmp_luasnip", -- Source Snippets
+      "L3MON4D3/LuaSnip",         -- Moteur de snippets (requis pour cmp_luasnip)
     },
     config = function()
       local cmp = require("cmp")
-      local capabilities = require("cmp_nvim_lsp").default_capabilities()
+      -- On s'assure que luasnip est présent pour éviter d'autres erreurs
+      local luasnip = require("luasnip")
 
-      -- Configuration de cmp
       cmp.setup({
+        snippet = {
+          expand = function(args)
+            luasnip.lsp_expand(args.body)
+          end,
+        },
         completion = {
-          completeopt = "menu,menuone,noinsert", -- Définit l'option de complétion
+          completeopt = "menu,menuone,preview,noselect",
         },
         mapping = cmp.mapping.preset.insert({
+          ["<C-k>"] = cmp.mapping.select_prev_item(), -- Navigation haut
+          ["<C-j>"] = cmp.mapping.select_next_item(), -- Navigation bas
           ["<C-Space>"] = cmp.mapping.complete(),
+          ["<C-e>"] = cmp.mapping.abort(),
           ["<CR>"] = cmp.mapping.confirm({ select = true }),
         }),
         sources = cmp.config.sources({
-          { name = "nvim_lsp" }, -- Complétion provenant du LSP
-          { name = "luasnip" }, -- Complétion provenant de LuaSnip
+          { name = "nvim_lsp" },
+          { name = "luasnip" },
         }, {
-          { name = "buffer" }, -- Complétion provenant du buffer actuel
+          { name = "buffer" },
         }),
       })
     end,

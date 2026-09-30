@@ -18,6 +18,11 @@ require("lazy").setup({
   spec = {
     -- add LazyVim and import its plugins
     { "LazyVim/LazyVim", import = "lazyvim.plugins" },
+    
+    -- Extras pour le C++
+    { import = "lazyvim.plugins.extras.lang.clangd" },
+    { import = "lazyvim.plugins.extras.lang.cmake" },
+
     -- import/override with your plugins
     { import = "plugins" },
     { import = "plugins.lsp" },
@@ -62,3 +67,4 @@ vim.keymap.set("n", "<space>D", vim.lsp.buf.type_definition, opts)
 vim.keymap.set("n", "<space>rn", vim.lsp.buf.rename, opts)
 vim.keymap.set({ "n", "v" }, "<space>ca", vim.lsp.buf.code_action, opts)
 vim.keymap.set("n", "gr", vim.lsp.buf.references, opts)
+vim.keymap.set({ "n", "v" }, "<leader><CR>", vim.lsp.buf.code_action, { desc = "LSP Code Action" })
